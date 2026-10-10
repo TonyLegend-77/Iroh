@@ -253,14 +253,14 @@ export function IrohChat({
     <div className="iroh-chat">
       <header className="iroh-chat-head">
         <div className="iroh-chat-title">
-          <div className="eyebrow">THE HOST · NANSEN RESEARCH AGENT</div>
+          <div className="eyebrow">THE HOST · BITGET & QWEN</div>
           <h1>
             Ask <em>Uncle</em>
           </h1>
           <p>
             {nansen === 'configured' || hasUserKey
-              ? 'Live Nansen research · Fast mode'
-              : 'Nansen research is offline'}
+              ? 'Live Bitget data · Qwen analysis'
+              : 'Bitget research is offline'}
           </p>
         </div>
         <div className="iroh-chat-actions">
@@ -325,7 +325,7 @@ export function IrohChat({
                 茶
               </span>
               <p className="iroh-greeting-title">
-                Bring me a token, wallet, or market question.
+                Bring me a tokenized US stock or market question.
               </p>
               {(nansen === 'configured' || hasUserKey) && (
                 <p>
@@ -372,10 +372,10 @@ export function IrohChat({
           {chat.isStreaming && (
             <p className="iroh-activity" role="status">
               {nansen === 'unavailable' && !hasUserKey
-                ? 'Nansen research is offline'
+                ? 'Bitget research is offline'
                 : chat.currentTool
                   ? `Researching with Nansen: ${chat.currentTool}`
-                  : 'Uncle is consulting Nansen…'}
+                  : 'Uncle is fetching Bitget evidence…'}
             </p>
           )}
           {chat.error && (
@@ -437,7 +437,7 @@ export function IrohChat({
                 ? dailyCap
                   ? 'Daily limit reached. Enter your key to continue.'
                   : 'Enter a Nansen API key to ask Uncle.'
-                : 'What is smart money doing with BTC this week?'
+                : 'Ask Uncle about a tokenized US stock (e.g., AAPL)'
           }
           rows={2}
           disabled={

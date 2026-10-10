@@ -41,9 +41,9 @@ export async function searchBitgetAssets(input: {
       companyName: row.companyName,
       productType: 'reality_stock',
       listingStatus: row.listingStatus,
-      tradingPeriod: safeJson(row.tradingPeriodJson),
+      tradingPeriod: safeJson(row.tradingPeriodJson || ""),
       weekendTradable: row.weekendTradable,
-      lastVerifiedAt: row.lastVerifiedAt.toISOString(),
+      lastVerifiedAt: row.lastVerifiedAt || new Date().toISOString(),
     })),
   };
 }

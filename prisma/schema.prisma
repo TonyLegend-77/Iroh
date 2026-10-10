@@ -25,7 +25,6 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId])
   @@index([expiresAt])
 }
@@ -39,7 +38,6 @@ model Chat {
   updatedAt            DateTime  @updatedAt
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages             Message[]
-
   @@index([userId, updatedAt])
 }
 
@@ -51,11 +49,9 @@ model Message {
   status    String   @default("complete")
   createdAt DateTime @default(now())
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
-
   @@index([chatId, id])
 }
 
-/// Saved Nansen readings. Visitors read these rows. A background refresh rewrites them.
 model NansenSnapshot {
   key          String   @id
   payload      String
@@ -65,40 +61,37 @@ model NansenSnapshot {
   updatedAt    DateTime @updatedAt
 }
 
-/// Canonical Reality stock instruments synchronized from Bitget's public catalog.
 model BitgetAsset {
   providerInstrumentId String   @id
-  symbol               String   @unique
-  underlyingTicker     String
+  symbol               String
   companyName          String?
-  tradingPeriodJson    String
+  productType          String?
+  listingStatus        String?
+  tradingPeriod        String?
   weekendTradable      String?
-  sourceRequestTime     String?
-  listingStatus        String   @default("active")
-  firstSeenAt          DateTime @default(now())
-  lastVerifiedAt       DateTime
+  lastVerifiedAt       DateTime?
+  underlyingTicker     String?
+  tradingPeriodJson    String?
+  firstSeenAt          DateTime?
+  sourceRequestTime    String?
+  
   observations         BitgetSignalObservation[]
-
-  @@index([underlyingTicker])
-  @@index([companyName])
-  @@index([listingStatus, lastVerifiedAt])
   signalCoverage       BitgetSignalCoverage[]
   theses               Thesis[]
+  @@index([symbol])
 }
 
-/// Cached normalized observations; a cache key includes normalized request parameters.
 model BitgetSignalObservation {
-  cacheKey      String     @id
-  instrumentId  String
-  signalType    String
-  payload       String
-  fetchedAt     DateTime
-  instrument    BitgetAsset @relation(fields: [instrumentId], references: [providerInstrumentId], onDelete: Cascade)
-
-  @@index([instrumentId, signalType, fetchedAt])
+  cacheKey     String   @id
+  instrumentId String
+  signalType   String
+  status       String?
+  payload      String
+  fetchedAt    DateTime
+  createdAt    DateTime @default(now())
+  instrument   BitgetAsset @relation(fields: [instrumentId], references: [providerInstrumentId], onDelete: Cascade)
+  @@index([instrumentId, signalType])
 }
-
-/// Latest observed signal coverage per instrument and signal type.
 
 model BitgetSignalCoverage {
   instrumentId    String
@@ -110,12 +103,9 @@ model BitgetSignalCoverage {
   errorCode       String?
   errorMessage    String?
   updatedAt       DateTime @updatedAt
-
-  instrument BitgetAsset @relation(fields: [instrumentId], references: [providerInstrumentId], onDelete: Cascade)
-
+  instrument      BitgetAsset @relation(fields: [instrumentId], references: [providerInstrumentId], onDelete: Cascade)
   @@id([instrumentId, signalType])
   @@index([signalType, status])
-  @@index([lastAttemptedAt])
 }
 
 model Thesis {
@@ -125,6 +115,5 @@ model Thesis {
   instrumentId String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
   instrument   BitgetAsset? @relation(fields: [instrumentId], references: [providerInstrumentId], onDelete: SetNull)
 }

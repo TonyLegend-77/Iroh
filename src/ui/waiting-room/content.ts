@@ -17,13 +17,13 @@ export const TEAM: Member[] = [
   {
     handle: '0x_Takezo',
     roles: 'Story · video · marketing',
-    bio: 'NFT and meme connoisseur, and an upcoming marketing star. Builds study\u2011for\u2011A and runs YouTube channels.',
+    bio: 'Storyteller and marketing lead. Builds study-for-A and runs YouTube channels.',
     portrait: art('team-takezo'),
   },
   {
     handle: 'david_grii',
     roles: 'Front-end · 3D UI',
-    bio: 'Full-stack dev across SaaS, health, and crypto. Does not watch anime, yet somehow has an anime pfp.',
+    bio: 'Full-stack dev across SaaS, health, and stock market. Does not watch anime, yet somehow has an anime pfp.',
     portrait: art('team-david'),
   },
   {
@@ -34,8 +34,8 @@ export const TEAM: Member[] = [
   },
   {
     handle: 'tldde',
-    roles: 'Systems · onchain data · Observatorium',
-    bio: 'Tall, seasoned dev. On-chain analytics and systems engineering. Has a cat.',
+    roles: 'Systems · market data · Observatorium',
+    bio: 'Tall, seasoned dev. Market analytics and systems engineering. Has a cat.',
     portrait: art('team-tldde'),
   },
 ];
@@ -46,25 +46,24 @@ export const REPO_URL = 'https://github.com/White-Lotus-Labs/iroh-tea-shop';
 export const PROJECT = {
   name: "Iroh's Tea Shop",
   studio: 'White Lotus Labs',
-  tagline: 'Choose a crypto thesis. See whether smart money supports it.',
+  tagline: 'Explore the Bitget stock catalog. Ask Uncle to interpret the evidence.',
   summary:
-    'Walk through a 3D tea shop built on Nansen data. Open a thesis, read its conviction signal, check the wallets and positions behind each asset, and ask Uncle what it means.',
-  // Same names and captions as the station dock inside.
+    'Walk through a 3D tea shop powered by Bitget market data and Qwen AI. Search for tokenized US stocks, inspect real-time equity quotes and analyst estimates, and ask Uncle to explain the evidence.',
   steps: [
     {
       label: 'Counter',
       caption: 'Thesis Desk',
-      text: 'Choose one of three theses. Read its conviction signal, then open the four assets behind it.',
+      text: 'Search the Bitget stock catalog. Select an instrument to view its price, company profile, and available research signals.',
     },
     {
       label: 'Host',
       caption: 'Ask Uncle',
-      text: 'Ask about a token, a wallet, or an onchain trend. Uncle asks Nansen’s Research Agent and brings back the answer.',
+      text: 'Ask Uncle about a tokenized US stock. He fetches real-time evidence from Bitget and uses Qwen to explain it clearly.',
     },
     {
       label: 'Shelf',
-      caption: 'Top traders',
-      text: 'Four 30-day boards from Nansen: perps traders, smart wallets, whales and meme traders. Open any wallet in Nansen’s profiler.',
+      caption: 'Market Coverage',
+      text: 'View the health of our data. See how many instruments are tracked and which research signals are currently available.',
     },
     {
       label: 'Observatorium',
@@ -73,5 +72,5 @@ export const PROJECT = {
     },
   ],
   honesty:
-    'The team wrote the three theses. Conviction, asset evidence, and the trader list are Nansen readings saved in the shop and refreshed hourly, or every 4 hours for the slow ones. Uncle still asks Nansen when you talk to him.',
+    "Uncle connects directly to Bitget's Model Context Protocol (MCP) for factual market data and uses Qwen to explain it. He never invents prices or financial advice. He only interprets the evidence provided.",
 };
