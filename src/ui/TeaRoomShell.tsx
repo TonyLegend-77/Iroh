@@ -15,11 +15,7 @@ import type { IrohActivity } from '../scene/TeaHost3D';
 import { OBSERVATORIUM_URL, RECENTER_EVENT, STATIONS } from '../scene/stations';
 import { AccountMenu } from './AccountMenu';
 import type { PublicUser } from '../auth/service';
-import {
-  isNansenAvailability,
-  type NansenAvailability,
-} from '../nansen/availability';
-import { IrohSession } from '../nansen/session';
+import { IrohSession } from '../chat/session';
 import { StationDock } from './StationDock';
 import type { ConvictionLevel, ThesisId } from '../thesis/types';
 import { convictionToMood } from './convictionMood';
@@ -89,13 +85,10 @@ function idlePreload(load: () => Promise<unknown>) {
 
 export default function TeaRoomShell({
   user,
-  nansen: initialNansen,
 }: {
   user: PublicUser | null;
-  nansen: NansenAvailability;
 }) {
   const [irohSession] = useState(() => new IrohSession());
-  const [nansen, setNansen] = useState(initialNansen);
   const [irohActivity, setIrohActivity] = useState<IrohActivity>('idle');
   const [station, setStation] = useState<Station>('Entrance');
   const [cameraAt, setCameraAt] = useState<Station | null>(null);
@@ -185,27 +178,7 @@ export default function TeaRoomShell({
     setStation('Counter');
     deepLinkOpenOnce.current = true;
   }, []);
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const response = await fetch('/api/nansen-status', {
-          cache: 'no-store',
-        });
-        if (!response.ok) return;
-        const body: unknown = await response.json();
-        if (!body || typeof body !== 'object' || !('nansen' in body)) return;
-        if (!isNansenAvailability(body.nansen) || cancelled) return;
-        setNansen(body.nansen);
-      } catch {
-        /* Keep the server-rendered availability. */
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  /* Bitget-only: nansen-status polling removed */
   useEffect(() => () => irohSession.stop(), [irohSession]);
   useEffect(
     () =>
@@ -493,7 +466,7 @@ export default function TeaRoomShell({
       data-station={station}
       data-motion={reduced ? 'reduce' : 'full'}
       data-mood={mood}
-      data-nansen={nansen}
+      data-research="bitget"
       data-iroh-activity={irohActivity}
       data-camera-at={cameraAt ?? undefined}
       data-shelf-view={shelfView}
@@ -518,7 +491,7 @@ export default function TeaRoomShell({
           </span>
           <span className="brand-text">
             Iroh&apos;s Tea Shop
-            <small>NANSEN-POWERED CRYPTO RESEARCH</small>
+            <small>BITGET REALITY RESEARCH DESK</small>
           </span>
         </a>
 
@@ -550,32 +523,13 @@ export default function TeaRoomShell({
 
             <div className="status-popup" id="status-popup" role="tooltip">
               <div className="status-row">
-                <span className="status-label">Thesis</span>
-                <span
-                  className={
-                    nansen === 'configured'
-                      ? 'status-value live'
-                      : 'status-value'
-                  }
-                >
-                  {nansen === 'configured' ? 'Saved hourly' : 'Offline'}
-                </span>
-              </div>
-
-              <div className="status-row">
-                <span className="status-label">Uncle</span>
-                <span
-                  className={
-                    nansen === 'configured'
-                      ? 'status-value live'
-                      : 'status-value'
-                  }
-                >
-                  {nansen === 'configured'
-                    ? 'Live · Nansen Research'
-                    : 'Offline'}
-                </span>
-              </div>
+  <span className="status-label">Thesis</span>
+  <span className="status-value live">Bitget · read-only</span>
+</div>
+<div className="status-row">
+  <span className="status-label">Uncle</span>
+  <span className="status-value live">Bitget Reality · research desk</span>
+</div>
             </div>
           </div>
 
@@ -760,11 +714,13 @@ export default function TeaRoomShell({
                 <IrohChat
                   session={irohSession}
                   user={user}
-                  nansen={nansen}
+                  research="bitget"
                   draft={uncleDraft}
                 />
               )}
-              {shelfOpen && <SmartWalletShelf nansen={nansen} />}
+              {station === 'Shelf' && shelfFocused && (
+                <SmartWalletShelf research="bitget" />
+              )}
             </section>
           )}
         </Suspense>

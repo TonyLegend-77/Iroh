@@ -4,59 +4,91 @@ import { getEquityData } from '@/services/bitget/mcp-client';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Map of supported Bitget MCP signals
-const SUPPORTED_SIGNALS: Record<string, string> = {
-  price: 'equity_price_quote',
-  profile: 'equity_profile',
-  estimates: 'equity_estimates_consensus',
-};
-
+/**
+ * Host research: Bitget MCP evidence → Qwen explanation.
+ * Secrets stay server-side. Read-only.
+ */
 export async function POST(request: Request) {
   try {
-    const { question, symbol, signalType = 'price' } = await request.json();
-
+    const body = (await request.json()) as {
+      question?: string;
+      symbol?: string;
+      instrumentId?: string;
+    };
+    const question = body.question?.trim();
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
     }
 
-    const entryId = SUPPORTED_SIGNALS[signalType] || SUPPORTED_SIGNALS.price;
+    const symbol = body.symbol?.trim() || undefined;
+    let mcpEvidence: unknown = null;
+    let mcpError: string | null = null;
 
-    // --- LAYER 1: Bitget MCP (Factual Evidence) ---
-    let mcpEvidence = null;
-    let mcpError = null;
-    
     if (symbol) {
       try {
-        const rawData = await getEquityData(entryId, { symbol });
-        mcpEvidence = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-      } catch (err: any) {
-        mcpError = err.message;
-        console.warn('[Research] MCP failed, proceeding with Qwen fallback:', mcpError);
+        const raw = await getEquityData('equity_price_quote', { symbol });
+        mcpEvidence =
+          typeof raw === 'string'
+            ? (() => {
+                try {
+                  return JSON.parse(raw);
+                } catch {
+                  return raw;
+                }
+              })()
+            : raw;
+      } catch (err) {
+        mcpError = err instanceof Error ? err.message : String(err);
       }
     }
 
-    // --- LAYER 2: Qwen (Grounded Explanation) ---
-    const systemPrompt = `You are an AI research assistant for a professional trading desk. 
+    const systemPrompt = `You are a stock-market research assistant for a Bitget Reality Thesis Desk.
 STRICT RULES:
-1. EVIDENCE FIRST: Base your answer strictly on the provided MCP data.
-2. HONEST UNCERTAINTY: If the data is missing or the question cannot be answered, state that clearly. Do not invent prices or facts.
-3. READ-ONLY: You cannot place trades or execute orders. You only provide research.
-4. NO FINANCIAL ADVICE: Present facts and analysis, not buy/sell recommendations.
-5. PROVENANCE: Reference the specific data points provided in the context.`;
+1. EVIDENCE FIRST: Base answers only on the provided Bitget MCP data.
+2. HONEST UNCERTAINTY: If data is missing, say so. Never invent prices or company facts.
+3. READ-ONLY: No trades, orders, or investment recommendations.
+4. STOCK DOMAIN: Discuss tokenized US stocks / Reality instruments only—not crypto wallets or on-chain smart money.
+5. PROVENANCE: Cite specific fields from the evidence when available.`;
 
-    const userPrompt = `User Question: "${question}"\n\nContext (Symbol: ${symbol || 'N/A'}, Data Type: ${signalType}):\n${mcpEvidence ? JSON.stringify(mcpEvidence, null, 2) : 'No MCP data available.'}${mcpError ? `\nMCP Error: ${mcpError}` : ''}`;
+    const userPrompt = `User question: "${question}"
+Instrument context: symbol=${symbol || 'N/A'}, instrumentId=${body.instrumentId || 'N/A'}
 
-    const qwenResponse = await fetch(`${process.env.QWEN_BASE_URL}/chat/completions`, {
+MCP evidence:
+${mcpEvidence ? JSON.stringify(mcpEvidence, null, 2) : 'No MCP data available.'}
+${mcpError ? `MCP error: ${mcpError}` : ''}`;
+
+    const base = process.env.QWEN_BASE_URL;
+    const key = process.env.QWEN_API_KEY;
+    if (!base || !key) {
+      return NextResponse.json(
+        {
+          error:
+            'Qwen is not configured on the server (QWEN_BASE_URL / QWEN_API_KEY).',
+          provenance: {
+            symbol: symbol || null,
+            instrumentId: body.instrumentId || null,
+            mcpSource: 'bitget_data',
+            mcpEntryId: symbol ? 'equity_price_quote' : null,
+            timestamp: new Date().toISOString(),
+            mcpError,
+          },
+          rawEvidence: mcpEvidence,
+        },
+        { status: 503 },
+      );
+    }
+
+    const qwenResponse = await fetch(`${base}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.QWEN_API_KEY}`,
+        Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
         model: process.env.QWEN_MODEL || 'qwen3.8-max',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: 'user', content: userPrompt },
         ],
         temperature: 0.3,
       }),
@@ -67,26 +99,29 @@ STRICT RULES:
       throw new Error(`Qwen API failed: ${qwenResponse.status} - ${errText}`);
     }
 
-    const qwenData = await qwenResponse.json();
-    const answer = qwenData.choices?.[0]?.message?.content || 'No response generated.';
+    const qwenData = (await qwenResponse.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const answer =
+      qwenData.choices?.[0]?.message?.content?.trim() ||
+      'No response generated.';
 
-    // --- LAYER 3: Orchestrated Response ---
     return NextResponse.json({
       question,
       answer,
       provenance: {
-        symbol,
+        symbol: symbol || null,
+        instrumentId: body.instrumentId || null,
         mcpSource: 'bitget_data',
-        mcpEntryId: entryId,
-        signalType,
+        mcpEntryId: symbol ? 'equity_price_quote' : null,
         timestamp: new Date().toISOString(),
         mcpError,
       },
       rawEvidence: mcpEvidence,
     });
-
-  } catch (error: any) {
-    console.error('[Research API Error]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Research API]', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

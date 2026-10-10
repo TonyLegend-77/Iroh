@@ -6,14 +6,9 @@ import {
   useSyncExternalStore,
   type FormEvent,
 } from 'react';
-import { IrohSession, type ChatMessage } from '../nansen/session';
-import { MAX_QUESTION_LENGTH } from '../nansen/limits';
-import type { NansenAvailability } from '../nansen/availability';
-import {
-  clearUserNansenApiKey,
-  getUserNansenApiKey,
-  setUserNansenApiKey,
-} from '../nansen/user-api-key';
+import { IrohSession, type ChatMessage } from '../chat/session';
+import { MAX_QUESTION_LENGTH } from '../chat/limits';
+import type { ResearchAvailability } from '../chat/availability';
 import type { PublicUser } from '../auth/service';
 import { IrohMessage } from './IrohMessage';
 
@@ -25,12 +20,12 @@ type SavedMessage = Pick<ChatMessage, 'role' | 'content' | 'status'> & {
 export function IrohChat({
   session,
   user,
-  nansen,
+  research = "bitget",
   draft: draftPrefill = null,
 }: {
   session: IrohSession;
   user: PublicUser | null;
-  nansen: NansenAvailability;
+  research?: ResearchAvailability | string;
   draft?: { text: string; key: number } | null;
 }) {
   const chat = useSyncExternalStore(
@@ -39,6 +34,7 @@ export function IrohChat({
     session.getSnapshot,
   );
   const [draft, setDraft] = useState('');
+  const [researchSymbol, setResearchSymbol] = useState('AAPL');
   const [history, setHistory] = useState<ChatSummary[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -116,7 +112,7 @@ export function IrohChat({
   };
 
   useEffect(() => {
-    setHasUserKey(Boolean(getUserNansenApiKey()));
+    setHasUserKey(Boolean(false));
   }, []);
 
   useEffect(() => {
@@ -177,23 +173,23 @@ export function IrohChat({
     if (!document.activeElement || document.activeElement === document.body)
       input.current?.focus();
   }, [chat.isStreaming]);
-  const dailyCap = chat.errorCode === 'nansen_agent_daily_limit';
-  const needsUserKey = !hasUserKey && (dailyCap || nansen === 'unavailable');
+  const dailyCap = false;
+  const needsUserKey = false; // Bitget + Qwen: no Nansen BYOK
   const saveUserKey = (event: FormEvent) => {
     event.preventDefault();
-    if (!setUserNansenApiKey(keyDraft)) return;
+    if (!false) return;
     setHasUserKey(true);
     setKeyDraft('');
     setKeyFormOpen(false);
     input.current?.focus();
   };
   const clearStoredKey = () => {
-    clearUserNansenApiKey();
+    undefined;
     setHasUserKey(false);
     setKeyFormOpen(false);
   };
   const send = () => {
-    const pending = session.send(draft);
+    const pending = session.send(draft, researchSymbol.trim() || null);
     if (pending) {
       refocusAfterAnswer.current = document.activeElement === input.current;
       // A click anywhere (selecting answer text, dragging the room) means the
@@ -213,7 +209,7 @@ export function IrohChat({
       {keyFormOpen ? (
         <form className="iroh-byok-form" onSubmit={saveUserKey}>
           <label htmlFor="iroh-user-key" className="sr-only">
-            Your Nansen API key
+            Research API key (unused)
           </label>
           <input
             id="iroh-user-key"
@@ -222,7 +218,8 @@ export function IrohChat({
             spellCheck={false}
             value={keyDraft}
             onChange={(event) => setKeyDraft(event.target.value)}
-            placeholder="Paste your Nansen API key" />
+            placeholder="Not required for Bitget read-only mode"
+          />
           <button type="submit" disabled={!keyDraft.trim()}>
             Save
           </button>
@@ -241,11 +238,11 @@ export function IrohChat({
       )}
       <a
         className="iroh-limit-cta"
-        href="https://nsn.ai/iroh0x"
+        href="#"
         target="_blank"
         rel="noreferrer"
       >
-        Get a Nansen API key ↗
+        Bitget docs ↗
       </a>
     </div>
   );
@@ -253,14 +250,14 @@ export function IrohChat({
     <div className="iroh-chat">
       <header className="iroh-chat-head">
         <div className="iroh-chat-title">
-          <div className="eyebrow">THE HOST · BITGET & QWEN</div>
+          <div className="eyebrow">THE HOST · DESK ANALYST</div>
           <h1>
             Ask <em>Uncle</em>
           </h1>
           <p>
-            {nansen === 'configured' || hasUserKey
-              ? 'Live Bitget data · Qwen analysis'
-              : 'Bitget research is offline'}
+            {false || hasUserKey
+              ? 'Bitget research desk'
+              : 'Desk Analyst · Bitget evidence + Qwen · read-only'}
           </p>
         </div>
         <div className="iroh-chat-actions">
@@ -325,18 +322,18 @@ export function IrohChat({
                 茶
               </span>
               <p className="iroh-greeting-title">
-                Bring me a tokenized US stock or market question.
+                Ask about a Reality stock — price, coverage, or evidence.
               </p>
-              {(nansen === 'configured' || hasUserKey) && (
+              {(false || hasUserKey) && (
                 <p>
-                  I’ll consult Nansen’s Research Agent and bring back the
-                  onchain evidence.
+                  I’ll consult Bitget Research Agent and bring back the
+                  Bitget market evidence.
                 </p>
               )}
-              {needsUserKey && !dailyCap && (
+              {false && !dailyCap && (
                 <>
                   <p>
-                    The house key is offline. Enter your own Nansen key, or get
+                    Desk Analyst is not connected to Bitget tools yet.
                     one below.
                   </p>
                   {byokActions}
@@ -363,7 +360,19 @@ export function IrohChat({
                 <div className="iroh-speaker">
                   {message.role === 'user' ? 'You' : 'Uncle'}
                 </div>
-                {message.content && <IrohMessage content={message.content} />}
+                {message.content && (
+                  <>
+                    {message.role === 'assistant' && message.provenance ? (
+                      <div className="iroh-provenance" role="note">
+                        <strong>Provenance</strong>
+                        {message.provenance.symbol ? <div>Symbol: {message.provenance.symbol}</div> : null}
+                        {message.provenance.mcpSource ? <div>Source: {message.provenance.mcpSource}</div> : null}
+                        {message.provenance.timestamp ? <div>Fetched: {new Date(message.provenance.timestamp).toLocaleString()}</div> : null}
+                      </div>
+                    ) : null}
+                    <IrohMessage content={message.content} />
+                  </>
+                )}
                 {message.status === 'stopped' && (
                   <small>Stopped · partial answer</small>
                 )}
@@ -371,11 +380,11 @@ export function IrohChat({
             ))}
           {chat.isStreaming && (
             <p className="iroh-activity" role="status">
-              {nansen === 'unavailable' && !hasUserKey
-                ? 'Bitget research is offline'
+              {true && !hasUserKey
+                ? 'Desk Analyst · Bitget evidence + Qwen · read-only'
                 : chat.currentTool
-                  ? `Researching with Nansen: ${chat.currentTool}`
-                  : 'Uncle is fetching Bitget evidence…'}
+                  ? `Researching: ${chat.currentTool}`
+                  : 'Uncle is thinking…'}
             </p>
           )}
           {chat.error && (
@@ -386,7 +395,7 @@ export function IrohChat({
               <p>{chat.error}</p>
               {dailyCap
                 ? !hasUserKey && byokActions
-                : (nansen === 'configured' || hasUserKey) && (
+                : (false || hasUserKey) && (
                     <button type="button" onClick={() => session.retry()}>
                       Try again
                     </button>
@@ -398,12 +407,24 @@ export function IrohChat({
       </div>
       {hasUserKey && (
         <p className="iroh-byok-using">
-          Using your Nansen key{' '}
+          Using research key{' '}
           <button type="button" onClick={clearStoredKey}>
             Clear
           </button>
         </p>
       )}
+      <label className="iroh-symbol-row">
+        <span className="sr-only">Stock ticker for research context</span>
+        <input
+          type="text"
+          value={researchSymbol}
+          onChange={(e) => setResearchSymbol(e.target.value.toUpperCase())}
+          placeholder="Ticker e.g. AAPL, TSLA"
+          maxLength={12}
+          disabled={chat.isStreaming}
+          aria-label="Stock ticker"
+        />
+      </label>
       <form
         className="iroh-compose"
         onSubmit={(event) => {
@@ -412,7 +433,7 @@ export function IrohChat({
         }}
       >
         <label htmlFor="iroh-question" className="sr-only">
-          Ask an onchain research question
+          Ask a stock research question
         </label>
         <textarea
           id="iroh-question"
@@ -436,15 +457,14 @@ export function IrohChat({
               : needsUserKey
                 ? dailyCap
                   ? 'Daily limit reached. Enter your key to continue.'
-                  : 'Enter a Nansen API key to ask Uncle.'
-                : 'Ask Uncle about a tokenized US stock (e.g., AAPL)'
+                  : 'Desk Analyst · Bitget evidence + Qwen · read-only'
+                : 'What is the current price of AAPL?'
           }
           rows={2}
           disabled={
             chat.isStreaming ||
             historyLoading ||
-            needsUserKey ||
-            (Boolean(user) && !chat.chatId)
+            (Boolean(user) && !selectedId && false)
           }
         />
         <div className="iroh-compose-bottom">
@@ -464,14 +484,9 @@ export function IrohChat({
             <button
               type="submit"
               className="primary"
-              disabled={
-                !draft.trim() ||
-                historyLoading ||
-                needsUserKey ||
-                (Boolean(user) && !chat.chatId)
-              }
+              disabled={!draft.trim() || historyLoading || chat.isStreaming}
             >
-              Ask Uncle <span aria-hidden="true">→</span>
+              Ask Analyst <span aria-hidden="true">→</span>
             </button>
           )}
         </div>

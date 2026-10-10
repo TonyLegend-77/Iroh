@@ -19,10 +19,11 @@ const body = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Iroh's Tea Shop — Explore Crypto Theses with Nansen",
+  title: 'Bitget Thesis Desk — Reality stock research',
   description:
-    "A 3D tea shop. Saved Nansen readings for three crypto theses and the top Hyperliquid traders, plus a live chat with Uncle through Nansen's Research Agent.",
+    'A 3D research workbench for tokenized US stocks on Bitget Reality. Catalog search, candle evidence, coverage, and Qwen-powered analysis. AI researches; humans decide.',
 };
+
 export default function RootLayout({
   children,
 }: {

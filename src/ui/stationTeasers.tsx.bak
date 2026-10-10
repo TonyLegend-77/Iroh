@@ -6,17 +6,17 @@ export const STATION_TEASERS: Partial<
 > = {
   Counter: {
     glyph: '签',
-    text: 'Choose a stock thesis. Inspect Bitget Reality evidence.',
+    text: 'Choose a thesis. See whether smart money supports it.',
     cta: ['Open the', 'Thesis Desk'],
   },
   AvatarSeat: {
     glyph: '师',
-    text: 'Open Thesis Desk for Bitget Reality coverage and market evidence.',
+    text: 'Bring an onchain question to Nansen’s Research Agent.',
     cta: ['Ask', 'Uncle'],
   },
   Shelf: {
     glyph: '卷',
-    text: 'Browse research coverage across Reality stock instruments.',
+    text: 'See the top ten perps traders, smart wallets, whales and meme traders.',
     cta: ['See the', 'top traders'],
   },
   TeaTable: {
